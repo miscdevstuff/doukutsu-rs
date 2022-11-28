@@ -1,0 +1,51 @@
+name: Build
+on:
+    push:
+        branches: [master]
+    pull_request:
+        branches: [master]
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v3
+            - name: Set up jdk
+              uses: actions/setup-java@v3
+              with:
+                  distribution: "zulu"
+                  java-version: "11"
+
+            - name: Install dependencies
+              run: sudo apt update && sudo apt install libasound2-dev libudev-dev libgl1-mesa-dev pkgconf librust-alsa-sys-dev #pkg-config
+
+            - name: Install latest stable Rust toolchain
+              uses: dtolnay/rust-toolchain@stable
+
+            - name: Add targets
+              run: |
+                  rustup target add aarch64-linux-android armv7-linux-androideabi arm-linux-androideabi thumbv7neon-linux-androideabi i686-linux-android x86_64-linux-android
+
+            - name: Install ndk
+              run: |
+                  ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "ndk;22.1.7171670"
+                  cargo install cargo-ndk
+
+            - name: Build
+              env:
+                  ANDROID_NDK: /usr/local/lib/android/sdk/ndk/22.1.7171670
+                  ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/22.1.7171670
+                  ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/22.1.7171670
+                  ANDROID_NDK_LATEST_HOME: /usr/local/lib/android/sdk/ndk/22.1.7171670
+              run: |
+                  cd app
+                  chmod +x gradlew
+                  ./gradlew clean assembleRelease --no-daemon
+
+            - name: Upload apk
+              uses: actions/upload-artifact@v3
+              with:
+                  name: doukutsu-rs-apk_release
+                  path: ./app/app/build/outputs/apk/release/app-release-unsigned.apk
+                  if-no-files-found: error
