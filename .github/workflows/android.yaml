@@ -29,15 +29,15 @@ jobs:
 
             - name: Install ndk
               run: |
-                  ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "ndk;22.1.7171670"
+                  ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "ndk;25.0.8775105"
                   cargo install cargo-ndk
 
             - name: Build
               env:
-                  ANDROID_NDK: /usr/local/lib/android/sdk/ndk/22.1.7171670
-                  ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/22.1.7171670
-                  ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/22.1.7171670
-                  ANDROID_NDK_LATEST_HOME: /usr/local/lib/android/sdk/ndk/22.1.7171670
+                  ANDROID_NDK: /usr/local/lib/android/sdk/ndk/25.0.8775105
+                  ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/25.0.8775105
+                  ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/25.0.8775105
+                  ANDROID_NDK_LATEST_HOME: /usr/local/lib/android/sdk/ndk/25.0.8775105
               run: |
                   cd app
                   chmod +x gradlew
