@@ -32,7 +32,7 @@ jobs:
                   ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "ndk;25.0.8775105"
                   cargo install cargo-ndk
 
-            - name: Build
+            - name: Build apk
               env:
                   ANDROID_NDK: /usr/local/lib/android/sdk/ndk/25.0.8775105
                   ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/25.0.8775105
@@ -43,9 +43,19 @@ jobs:
                   chmod +x gradlew
                   ./gradlew clean assembleRelease --no-daemon
 
+            - name: Sign apk
+              env:
+                  ANDROID_NDK: /usr/local/lib/android/sdk/ndk/25.0.8775105
+                  ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/25.0.8775105
+                  ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/25.0.8775105
+                  ANDROID_NDK_LATEST_HOME: /usr/local/lib/android/sdk/ndk/25.0.8775105
+              run: |
+                  apksigner="$(find $ANDROID_SDK_ROOT/build-tools -name apksigner | sort -r | head -n 1)"
+                  ${apksigner} sign --ks public.jks --ks-key-alias public --ks-pass pass:public --key-pass pass:public --in ./app/app/build/outputs/apk/release/app-release-unsigned.apk --out ./app/app/build/outputs/apk/release/app-release-signed.apk
+
             - name: Upload apk
               uses: actions/upload-artifact@v3
               with:
-                  name: doukutsu-rs-apk_release
-                  path: ./app/app/build/outputs/apk/release/app-release-unsigned.apk
+                  name: doukutsu-rs-apk_release_signed
+                  path: ./app/app/build/outputs/apk/release/app-release-signed.apk
                   if-no-files-found: error
