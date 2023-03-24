@@ -5,6 +5,8 @@ use chrono::{Datelike, Local};
 use crate::common::{ControlFlags, Direction, FadeState};
 use crate::components::draw_common::{draw_number, Alignment};
 use crate::data::vanilla::VanillaExtractor;
+#[cfg(feature = "discord-rpc")]
+use crate::discord::DiscordRPC;
 use crate::engine_constants::EngineConstants;
 use crate::framework::backend::BackendTexture;
 use crate::framework::context::Context;
@@ -33,6 +35,8 @@ use crate::scene::Scene;
 use crate::sound::SoundManager;
 use crate::util::bitvec::BitVec;
 use crate::util::rng::XorShift;
+
+use super::filesystem_container::FilesystemContainer;
 
 #[derive(PartialEq, Eq, Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub enum TimingMode {
@@ -314,6 +318,7 @@ pub struct SharedGameState {
     pub lightmap_canvas: Option<Box<dyn BackendTexture>>,
     pub season: Season,
     pub menu_character: MenuCharacter,
+    pub fs_container: Option<FilesystemContainer>,
     pub constants: EngineConstants,
     pub font: BMFont,
     pub texture_set: TextureSet,
@@ -331,6 +336,8 @@ pub struct SharedGameState {
     pub loc: Locale,
     pub tutorial_counter: u16,
     pub more_rust: bool,
+    #[cfg(feature = "discord-rpc")]
+    pub discord_rpc: DiscordRPC,
     pub shutdown: bool,
 }
 
@@ -431,6 +438,11 @@ impl SharedGameState {
         let more_rust = (current_time.month() == 7 && current_time.day() == 7) || settings.more_rust;
         let seed = chrono::Local::now().timestamp() as i32;
 
+        let discord_rpc_app_id = match option_env!("DISCORD_RPC_APP_ID") {
+            Some(app_id) => app_id,
+            None => "1076523467337367622",
+        };
+
         Ok(SharedGameState {
             control_flags: ControlFlags(0),
             game_flags: BitVec::with_size(8000),
@@ -468,6 +480,7 @@ impl SharedGameState {
             lightmap_canvas: None,
             season,
             menu_character: MenuCharacter::Quote,
+            fs_container: None,
             constants,
             font,
             texture_set: TextureSet::new(),
@@ -485,6 +498,8 @@ impl SharedGameState {
             loc: locale,
             tutorial_counter: 0,
             more_rust,
+            #[cfg(feature = "discord-rpc")]
+            discord_rpc: DiscordRPC::new(discord_rpc_app_id),
             shutdown: false,
         })
     }
@@ -562,6 +577,9 @@ impl SharedGameState {
         #[cfg(feature = "scripting-lua")]
         self.lua.reload_scripts(ctx)?;
 
+        #[cfg(feature = "discord-rpc")]
+        self.discord_rpc.update_difficulty(self.difficulty)?;
+
         let mut next_scene = GameScene::new(self, ctx, self.constants.game.new_game_stage as usize)?;
         next_scene.player1.cond.set_alive(true);
         let (pos_x, pos_y) = self.constants.game.new_game_player_pos;
@@ -636,6 +654,9 @@ impl SharedGameState {
                         #[cfg(feature = "scripting-lua")]
                         self.lua.reload_scripts(ctx)?;
 
+                        #[cfg(feature = "discord-rpc")]
+                        self.discord_rpc.update_difficulty(self.difficulty)?;
+
                         self.next_scene = Some(Box::new(next_scene));
                         return Ok(());
                     }
@@ -705,6 +726,9 @@ impl SharedGameState {
 
     pub fn shutdown(&mut self) {
         self.shutdown = true;
+
+        #[cfg(feature = "discord-rpc")]
+        self.discord_rpc.dispose();
     }
 
     // Stops SFX 40/41/58 (CPS and CSS)

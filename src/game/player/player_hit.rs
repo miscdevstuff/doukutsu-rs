@@ -290,10 +290,12 @@ impl Player {
                         if weapon.wtype == WeaponType::Spur {
                             npc.exp = 0;
                         } else {
-                            if self.popup.value > 0 {
-                                self.popup.add_value(npc.exp as i16);
-                            } else {
-                                self.popup.set_value(npc.exp as i16);
+                            if self.shock_counter == 0 {
+                                if self.popup.value > 0 {
+                                    self.popup.add_value(npc.exp as i16);
+                                } else {
+                                    self.popup.set_value(npc.exp as i16);
+                                }
                             }
                         }
                     }
@@ -319,6 +321,9 @@ impl Player {
                     npc.cond.set_alive(false);
 
                     state.sound_manager.play_sfx(20);
+
+                    #[cfg(feature = "discord-rpc")]
+                    let _ = state.discord_rpc.update_hp(&self);
                 }
                 _ => {}
             }

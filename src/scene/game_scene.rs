@@ -1739,6 +1739,17 @@ impl Scene for GameScene {
         self.pause_menu.init(state, ctx)?;
         self.whimsical_star.init(&self.player1);
 
+        #[cfg(feature = "discord-rpc")]
+        {
+            if self.stage.data.map == state.stages[state.constants.game.intro_stage as usize].map {
+                state.discord_rpc.set_initializing()?;
+            } else {
+                state.discord_rpc.update_hp(&self.player1)?;
+                state.discord_rpc.update_stage(&self.stage.data)?;
+                state.discord_rpc.set_in_game()?;
+            }
+        }
+
         Ok(())
     }
 
@@ -2326,7 +2337,13 @@ impl Scene for GameScene {
             ScanCode::F10 => state.settings.debug_outlines = !state.settings.debug_outlines,
             ScanCode::F11 => state.settings.fps_counter = !state.settings.fps_counter,
             ScanCode::F12 => state.debugger = !state.debugger,
-            ScanCode::Grave => state.command_line = !state.command_line,
+            ScanCode::Grave => {
+                state.command_line = !state.command_line;
+
+                if !state.command_line {
+                    state.control_flags.set_tick_world(true);
+                }
+            }
             _ => {}
         };
 

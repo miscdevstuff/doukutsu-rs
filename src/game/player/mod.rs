@@ -923,6 +923,9 @@ impl Player {
                 let _ = npc_list.spawn(0x100, npc.clone());
             }
         }
+
+        #[cfg(feature = "discord-rpc")]
+        let _ = state.discord_rpc.update_hp(&self);
     }
 
     pub fn update_teleport_counter(&mut self, state: &SharedGameState) {
@@ -937,6 +940,12 @@ impl Player {
 impl GameEntity<&NPCList> for Player {
     fn tick(&mut self, state: &mut SharedGameState, npc_list: &NPCList) -> GameResult {
         if !self.cond.alive() {
+            if self.life == 0 {
+                self.popup.x = self.x;
+                self.popup.y = self.y - self.display_bounds.top as i32 + 0x1000;
+                self.popup.tick(state, ())?;
+            }
+
             return Ok(());
         }
 

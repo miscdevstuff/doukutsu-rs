@@ -60,6 +60,13 @@ android {
             path "src/main/cpp/CMakeLists.txt"
         }
     }
+    
+    packagingOptions {
+        jniLibs {
+            excludes += "**/dummy.so"
+        }
+
+    }
 }
 
 dependencies {
