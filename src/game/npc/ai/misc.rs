@@ -188,13 +188,26 @@ impl NPC {
         Ok(())
     }
 
-    pub(crate) fn tick_n016_save_point(&mut self, state: &mut SharedGameState) -> GameResult {
+    pub(crate) fn tick_n016_save_point(&mut self, state: &mut SharedGameState, npc_list: &NPCList) -> GameResult {
         if self.action_num == 0 {
             self.action_num = 1;
-
+            
             if self.direction == Direction::Right {
                 self.npc_flags.set_interactable(false);
                 self.vel_y = -0x200;
+                
+                //Creates smoke
+                let mut npc = NPC::create(4, &state.npc_table);
+                npc.cond.set_alive(true);
+
+                for _ in 0..3 {
+                    npc.x = self.x + self.rng.range(-12..12) as i32 * 0x200;
+                    npc.y = self.y + self.rng.range(-12..12) as i32 * 0x200;
+                    npc.vel_x = self.rng.range(-341..341) as i32;
+                    npc.vel_y = self.rng.range(-0x600..0) as i32;
+
+                    let _ = npc_list.spawn(0x100, npc.clone());
+                }
             }
         }
 
@@ -214,9 +227,25 @@ impl NPC {
         Ok(())
     }
 
-    pub(crate) fn tick_n017_health_refill(&mut self, state: &mut SharedGameState) -> GameResult {
+    pub(crate) fn tick_n017_health_refill(&mut self, state: &mut SharedGameState, npc_list: &NPCList) -> GameResult {
         if self.action_num == 0 {
             self.action_num = 1;
+            
+            //Creates smoke when spawned in a shelter
+            if self.direction == Direction::Right {
+                //Creates smoke
+                let mut npc = NPC::create(4, &state.npc_table);
+                npc.cond.set_alive(true);
+
+                for _ in 0..3 {
+                    npc.x = self.x + self.rng.range(-12..12) as i32 * 0x200;
+                    npc.y = self.y + self.rng.range(-12..12) as i32 * 0x200;
+                    npc.vel_x = self.rng.range(-341..341) as i32;
+                    npc.vel_y = self.rng.range(-0x600..0) as i32;
+
+                    let _ = npc_list.spawn(0x100, npc.clone());
+                }
+            }
         }
 
         match self.action_num {
