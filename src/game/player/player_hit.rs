@@ -106,7 +106,7 @@ impl Player {
         let mut flags = Flag(0);
 
         if ((self.y - self.hit_bounds.top as i32) < (npc.y + npc.hit_bounds.bottom as i32 - 0x600))
-            && ((self.y + self.hit_bounds.bottom as i32) > (npc.y - npc.hit_bounds.bottom as i32 + 0x600))
+            && ((self.y + self.hit_bounds.bottom as i32) > (npc.y - npc.hit_bounds.top as i32 + 0x600))
             && ((self.x - self.hit_bounds.right as i32) < (npc.x + npc.hit_bounds.right as i32))
             && ((self.x - self.hit_bounds.right as i32) > npc.x)
         {
@@ -118,7 +118,7 @@ impl Player {
         }
 
         if ((self.y - self.hit_bounds.top as i32) < (npc.y + npc.hit_bounds.bottom as i32 - 0x600))
-            && ((self.y + self.hit_bounds.bottom as i32) > (npc.y - npc.hit_bounds.bottom as i32 + 0x600))
+            && ((self.y + self.hit_bounds.bottom as i32) > (npc.y - npc.hit_bounds.top as i32 + 0x600))
             && ((self.x + self.hit_bounds.right as i32 - 0x200) > (npc.x - npc.hit_bounds.right as i32))
             && ((self.x + self.hit_bounds.right as i32 - 0x200) < npc.x)
         {
@@ -287,16 +287,8 @@ impl Player {
                     inventory.add_xp(npc.exp, self, state);
 
                     if let Some(weapon) = inventory.get_current_weapon() {
-                        if weapon.wtype == WeaponType::Spur {
-                            npc.exp = 0;
-                        } else {
-                            if self.shock_counter == 0 {
-                                if self.popup.value > 0 {
-                                    self.popup.add_value(npc.exp as i16);
-                                } else {
-                                    self.popup.set_value(npc.exp as i16);
-                                }
-                            }
+                        if weapon.wtype != WeaponType::Spur {
+                            self.exp_popup.add_value(npc.exp as i16);
                         }
                     }
 

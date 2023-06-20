@@ -332,6 +332,9 @@ impl NPCList {
             state.set_flag(npc.flag_num as usize, true);
 
             if npc.npc_flags.show_damage() {
+                if npc.popup.value != 0 {
+                    npc.popup.update_displayed_value();
+                }
                 if vanish {
                     npc.vanish(state);
                 }
@@ -362,9 +365,9 @@ impl NPCList {
                 state.set_flag(npc.flag_num as usize, true);
 
                 match npc.size {
-                    1 => self.create_death_smoke(npc.x, npc.y, npc.display_bounds.right as usize, 3, state, &npc.rng),
-                    2 => self.create_death_smoke(npc.x, npc.y, npc.display_bounds.right as usize, 7, state, &npc.rng),
-                    3 => self.create_death_smoke(npc.x, npc.y, npc.display_bounds.right as usize, 12, state, &npc.rng),
+                    1 => self.create_death_smoke(npc.x, npc.y, npc.display_bounds.right as usize, 4, state, &npc.rng),
+                    2 => self.create_death_smoke(npc.x, npc.y, npc.display_bounds.right as usize, 8, state, &npc.rng),
+                    3 => self.create_death_smoke(npc.x, npc.y, npc.display_bounds.right as usize, 16, state, &npc.rng),
                     _ => {}
                 };
             }

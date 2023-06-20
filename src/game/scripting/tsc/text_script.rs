@@ -50,6 +50,27 @@ pub enum TextScriptEncoding {
     ShiftJIS,
 }
 
+impl From<&str> for TextScriptEncoding {
+    fn from(s: &str) -> Self {
+        match s {
+            "utf-8" => Self::UTF8,
+            _ => Self::ShiftJIS,
+        }
+    }
+}
+
+impl TextScriptEncoding {
+    pub fn invalid_encoding(encoding: TextScriptEncoding, state: &SharedGameState) -> bool {
+        let required_encoding = if (state.loc.code == "jp" || state.loc.code == "en") && state.constants.is_base() {
+            TextScriptEncoding::ShiftJIS
+        } else {
+            TextScriptEncoding::UTF8
+        };
+
+        encoding != required_encoding
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[repr(u8)]
 pub enum TextScriptLine {
@@ -432,8 +453,24 @@ impl TextScriptVM {
                                 )
                             };
                         } else {
-                            state.textscript_vm.state =
-                                TextScriptExecutionState::Running(event, cursor.position() as u32);
+                            let ticks = if state.textscript_vm.flags.fast() || state.textscript_vm.flags.cutscene_skip()
+                            {
+                                0
+                            } else {
+                                state.constants.textscript.text_speed_fast
+                            };
+                            
+                            state.textscript_vm.state = if new_line {
+                                TextScriptExecutionState::MsgNewLine(
+                                    event,
+                                    cursor.position() as u32,
+                                    remaining,
+                                    ticks,
+                                    4,
+                                )
+                            } else {
+                                TextScriptExecutionState::Running(event, cursor.position() as u32)
+                            };
                         }
                     } else {
                         state.textscript_vm.reset();
@@ -450,7 +487,11 @@ impl TextScriptVM {
                         state.textscript_vm.line_1.clear();
                         state.textscript_vm.line_1.append(&mut state.textscript_vm.line_2);
                         state.textscript_vm.line_2.append(&mut state.textscript_vm.line_3);
-                        state.textscript_vm.state = TextScriptExecutionState::Msg(event, ip, remaining, ticks);
+                        state.textscript_vm.state = if remaining < 2 {
+                            TextScriptExecutionState::Running(event, ip)
+                        } else {
+                            TextScriptExecutionState::Msg(event, ip, remaining, ticks)
+                        };
                     } else {
                         state.textscript_vm.state =
                             TextScriptExecutionState::MsgNewLine(event, ip, remaining, ticks, counter);
@@ -744,8 +785,19 @@ impl TextScriptVM {
             TSCOpCode::MYD => {
                 let new_direction = read_cur_varint(&mut cursor)? as usize;
                 if let Some(direction) = Direction::from_int(new_direction) {
-                    game_scene.player1.direction = direction;
-                    game_scene.player2.direction = direction;
+                    if direction != Direction::Bottom {
+                        game_scene.player1.direction = direction;
+                        game_scene.player2.direction = direction;
+                    }
+                } else if new_direction >= 10 {
+                    for npc in game_scene.npc_list.iter_alive() {
+                        // The vanilla game treats this as a 1-byte value lol
+                        //if npc.event_num == (new_direction & 0xFF) as u16 {
+                        if npc.event_num == new_direction as u16 {
+                            game_scene.player1.direction = if game_scene.player1.x > npc.x { Direction::Left } else { Direction::Right };
+                            game_scene.player2.direction = if game_scene.player2.x > npc.x { Direction::Left } else { Direction::Right };
+                        }
+                    }
                 }
                 game_scene.player1.cond.set_interacted(new_direction == 3);
                 game_scene.player2.cond.set_interacted(new_direction == 3);
@@ -1165,6 +1217,11 @@ impl TextScriptVM {
                 new_scene.frame.wait = game_scene.frame.wait;
                 new_scene.nikumaru = game_scene.nikumaru;
                 new_scene.replay = game_scene.replay.clone();
+                // Reset player invincibility (kind of hacky, but oh well)
+                if state.constants.textscript.reset_invicibility_on_any_script {
+                    new_scene.player1.shock_counter = 0;
+                    new_scene.player2.shock_counter = 0;
+                }
 
                 let skip = state.textscript_vm.flags.cutscene_skip();
                 state.control_flags.set_tick_world(true);
