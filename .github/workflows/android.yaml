@@ -29,15 +29,15 @@ jobs:
 
             - name: Install ndk
               run: |
-                  ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "ndk;25.0.9519653"
+                  ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "ndk;25.0.8775105"
                   cargo install cargo-ndk
 
             - name: Build apk
               env:
-                  ANDROID_NDK: /usr/local/lib/android/sdk/ndk/25.0.9519653
-                  ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/25.0.9519653
-                  ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/25.0.9519653
-                  ANDROID_NDK_LATEST_HOME: /usr/local/lib/android/sdk/ndk/25.0.9519653
+                  ANDROID_NDK: /usr/local/lib/android/sdk/ndk/25.0.8775105
+                  ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/25.0.8775105
+                  ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/25.0.8775105
+                  ANDROID_NDK_LATEST_HOME: /usr/local/lib/android/sdk/ndk/25.0.8775105
               run: |
                   cd app
                   chmod +x gradlew
@@ -45,10 +45,10 @@ jobs:
 
             - name: Sign apk
               env:
-                  ANDROID_NDK: /usr/local/lib/android/sdk/ndk/25.0.9519653
-                  ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/25.0.9519653
-                  ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/25.0.9519653
-                  ANDROID_NDK_LATEST_HOME: /usr/local/lib/android/sdk/ndk/25.0.9519653
+                  ANDROID_NDK: /usr/local/lib/android/sdk/ndk/25.0.8775105
+                  ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/25.0.8775105
+                  ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/25.0.8775105
+                  ANDROID_NDK_LATEST_HOME: /usr/local/lib/android/sdk/ndk/25.0.8775105
               run: |
                   apksigner="$(find $ANDROID_SDK_ROOT/build-tools -name apksigner | sort -r | head -n 1)"
                   ${apksigner} sign --ks public.jks --ks-key-alias public --ks-pass pass:public --key-pass pass:public --in ./app/app/build/outputs/apk/release/app-release-unsigned.apk --out ./app/app/build/outputs/apk/release/app-release-signed.apk
